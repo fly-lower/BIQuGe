@@ -6,19 +6,25 @@ import multiprocessing
 from multiprocessing import pool
 from db_link import RedisClient
 from spider import BiQuGe
-st = 0
-def gogogo(book):
-	global st
-	st = time.time ()
-	print('开启进程%s\n'%str(book[1]))
-	spider_list = [BiQuGe(job=book) for i in range(5)]
-	for spider in spider_list:
-		spider.start()
-def log(book):
-	global st
-	with open('biquge.log','a') as fp:
-		fp.write('%s爬完了，用了%f'%(book,time.time()))
-		print('%s爬完了，用了%f'%(book,time.time()))
+
+class Work:
+	def __init__(self,book):
+		self.st_time=time.time()
+		self.book=book
+	def gogogo(self):
+		print('开启进程%s\n'%str(self.book[1]))
+		spider_list = [BiQuGe(job=self.book) for i in range(5)]
+		print('开启了线程\n')
+		for spider in spider_list:
+			spider.start()
+	def log(self,Nothing):
+		ed_time = time.time()
+		t = ed_time-self.st_time
+		with open('biquge.log','a') as fp:
+			fp.write('%s爬完了，用了%f\n'%(self.book,t))
+			print('%s爬完了，用了%f'%(self.book,t))
+
+
 
 
 
@@ -31,11 +37,13 @@ if __name__ == '__main__':
 		i+= 1
 		try:
 			book = db.get_task('BOOK_LIST')
-			print(book)
-			p.apply_async(func=gogogo,args=(book,),callback=log)
+			w = Work(book)
+			print('-'*100)
+			print(book[1])
+			p.apply_async(func=w.gogogo,callback=w.log)
 		except:
 			break
 	p.close()
-	print('%s个进程创建完毕'%i)
+	print('%s个进程创建完毕\n'%i)
 	p.join()
 	print('%s 结束'%(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())))

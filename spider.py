@@ -1,3 +1,5 @@
+import re
+
 import requests
 import threading
 from threading import Thread
@@ -7,6 +9,13 @@ from db_link import RedisClient as RD
 from db_link import MongoClient as MG
 from settings import *
 from tools import *
+
+class NetError(Exception):
+	pass
+
+class ContentError(Exception):
+	pass
+
 
 class BiQuGe(Thread):
 	def __init__(self,chapter_job=None,job=None,kk=None):
@@ -54,12 +63,24 @@ class BiQuGe(Thread):
 			html = etree.HTML ( response.text )
 			contents=html.xpath('//div[@id="content"]/text()')
 			content = ''.join([i.strip() for i in contents])
-			print ('%s：%s'%(self.job[1],title) )
+			re_ = [ len(re.compile(i,re.S).findall(content))   for i in PATTERN]
+			if len(contents)<50:
+				if sum(re_)<3:
+					raise NetError
+				# else:
+				# 	raise ContentError
 			mg = MG(MONGO_DB,self.job[1])
 			mg.table.update({'hash_url':hash_url},{'$set':{'title':title,'index':index,'content':content}},upsert=True)
-		except:
-			print('%s内容失败，存入任务列表'%title)
+			print ('%s：%s保存成功'%(self.job[1],title) )
+		except NetError:
+			print(contents)
+			print('获取%s内容失败，存入任务列表\n'%title)
 			self.db.put_task(self.job[1],chapter_job)
+		except Exception:
+			print ( '获取%s内容失败，存入任务列表\n' % title )
+			self.db.put_task ( self.job [1], chapter_job )
+		# except ContentError:
+		# 	pass
 		# 放入失败的章节
 
 	def books(self,main_url):
@@ -75,10 +96,11 @@ class BiQuGe(Thread):
 
 	def run(self):
 		while True:
-			chapter = self.db.get_task(self.job[1])
-			if not chapter:
+			try:
+				chapter = self.db.get_task(self.job[1])
+				self.content(chapter)
+			except:
 				break
-			self.content(chapter)
 		print('一个线程结束')
 
 
