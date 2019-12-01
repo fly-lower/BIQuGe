@@ -9,24 +9,34 @@ from settings import *
 from tools import *
 
 class BiQuGe(Thread):
-	def __init__(self,chapter_job=None,job=None,):
+	def __init__(self,chapter_job=None,job=None,kk=None):
+		'''
+
+		:param chapter_job:
+		:param job: 书名
+		:param kk:
+		'''
 		self.chapter_job = chapter_job
+		self.kk=kk
 		self.db  = RD()
 		super().__init__()
 		self.job=job
 		self.headers = {
 			'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36',
 		}
-
-		self.books('http://www.xbiquge.la/xiaoshuodaquan/')
+		if not self.job:
+			self.books('http://www.xbiquge.la/xiaoshuodaquan/')
 		if self.job:
-			print('开工了')
+			# print('开工了')
 			self.chapters(self.job[0])
 
 
 	def chapters(self,title_url):
-		print('章节')
+		# print('章节')
+		# print(self.kk)
+		# print('继续')
 		response = requests.get(title_url,headers = self.headers)
+		# print(response.text)
 		response.encoding='utf-8'
 		html = etree.HTML(response.text)
 		chapter_urls = html.xpath('//div[@id="list"]/dl/dd/a/@href')
@@ -40,19 +50,21 @@ class BiQuGe(Thread):
 
 				#(0,(title,url))
 	def content(self,chapter_job):
-		print('内容')
+		# print('内容')
+		index,(title,url,hash_url) = chapter_job
 		try:
-			index,(title,url,hash_url) = chapter_job
 			response = requests.get ( url, headers=self.headers )
 			response.encoding = 'utf-8'
 			html = etree.HTML ( response.text )
 			contents=html.xpath('//div[@id="content"]/text()')
 			content = ''.join([i.strip() for i in contents])
-			print ( title )
+			# print ( title )
 			mg = MG(MONGO_DB,self.job[1])
 			mg.table.update({'hash_url':hash_url},{'$set':{'title':title,'index':index,'content':content}},upsert=True)
 		except:
+			print('%s内容失败，存入任务列表'%title)
 			self.db.put_task(self.job[1],chapter_job)
+		# 放入失败的章节
 		# print(len(content))
 
 	def books(self,main_url):
@@ -62,15 +74,20 @@ class BiQuGe(Thread):
 		books_url = res.xpath('//div[@id="main"]/div/ul/li/a/@href')
 		books_title = res.xpath('//div[@id="main"]/div/ul/li/a/text()')
 		books = zip(books_url,books_title)
-		print('书本')
+		# print('书本')
 		for i in books:
 			if len(i)==2:
 				self.db.put_task('BOOK_LIST',i)
-		print('-----------------------------------')
+		# print('-----------------------------------')/
 
 	def run(self):
-		self.content(self.chapter_job)
-
+		# print('run了')
+		while True:
+			chapter = self.db.get_task(self.job[1])
+			if not chapter:
+				break
+			self.content(chapter)
+		print('一个线程结束')
 
 
 if __name__ == '__main__':

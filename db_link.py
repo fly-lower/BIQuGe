@@ -22,20 +22,18 @@ class RedisClient:
 		self.rd = redis.Redis()
 
 	def put_task(self,set_name,url):
-		# print(url)
-		# print('1')
 		if not isinstance(set_name,str):
 			set_name = str(set_name)
 		if not isinstance(url,str):
-			# print(2)、
 			url = str(url)
-		res = self.rd.sadd(set_name,url)
-		# print(3)
-		# print(res)
+		self.rd.sadd(set_name,url)
 
 	def get_task(self,set_name):
 		task = self.rd.spop(set_name)
+		# print(task)
+		task = task.decode()
 		task = eval(task)
+		# print(task)
 		return task
 
 
