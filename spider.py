@@ -63,17 +63,16 @@ class BiQuGe(Thread):
 			html = etree.HTML ( response.text )
 			contents=html.xpath('//div[@id="content"]/text()')
 			content = ''.join([i.strip() for i in contents])
-			re_ = [ len(re.compile(i,re.S).findall(content))   for i in PATTERN]
-			if len(contents)<50:
-				if sum(re_)<3:
-					raise NetError
+			# re_ = [ len(re.compile(i,re.S).findall(content))   for i in PATTERN]
+			if len(contents)<50 and re.compile(PATTERN1,re.S).search(content):
+				raise NetError
 				# else:
 				# 	raise ContentError
 			mg = MG(MONGO_DB,self.job[1])
 			mg.table.update({'hash_url':hash_url},{'$set':{'title':title,'index':index,'content':content}},upsert=True)
 			print ('%s：%s保存成功'%(self.job[1],title) )
 		except NetError:
-			print(contents)
+			print(content)
 			print('获取%s内容失败，存入任务列表\n'%title)
 			self.db.put_task(self.job[1],chapter_job)
 		except Exception:

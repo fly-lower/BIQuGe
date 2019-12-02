@@ -17,12 +17,15 @@ class Work:
 		print('开启了线程\n')
 		for spider in spider_list:
 			spider.start()
-	def log(self,Nothing):
-		ed_time = time.time()
-		t = ed_time-self.st_time
-		with open('biquge.log','a') as fp:
-			fp.write('%s爬完了，用了%f\n'%(self.book,t))
-			print('%s爬完了，用了%f'%(self.book,t))
+		for spider in spider_list:
+			spider.join()
+		ed_time = time.time ()
+		t = ed_time - self.st_time
+		with open ( 'biquge.log', 'a' ) as fp:
+			fp.write ( '%s爬完了，用了%f\n' % (self.book, t) )
+			print ( '%s爬完了，用了%f' % (self.book, t) )
+	# def log(self,Nothing):
+
 
 
 
@@ -40,7 +43,7 @@ if __name__ == '__main__':
 			w = Work(book)
 			print('-'*100)
 			print(book[1])
-			p.apply_async(func=w.gogogo,callback=w.log)
+			p.apply_async(func=w.gogogo)
 		except:
 			break
 	p.close()
