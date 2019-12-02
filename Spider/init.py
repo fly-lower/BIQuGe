@@ -1,11 +1,8 @@
 import time
 
-import requests
-import threading
 import multiprocessing
-from multiprocessing import pool
-from db_link import RedisClient
-from spider import BiQuGe
+from Spider.db_link import RedisClient
+from Spider.spider import BiQuGe
 
 class Work:
 	def __init__(self,book):
@@ -21,18 +18,13 @@ class Work:
 			spider.join()
 		ed_time = time.time ()
 		t = ed_time - self.st_time
+		return t
+	def log(self,t):
 		with open ( 'biquge.log', 'a' ) as fp:
 			fp.write ( '%s爬完了，用了%f\n' % (self.book, t) )
 			print ( '%s爬完了，用了%f' % (self.book, t) )
-	# def log(self,Nothing):
 
-
-
-
-
-
-if __name__ == '__main__':
-	bqg = BiQuGe() #获取book列表
+def startwork():
 	p = multiprocessing.Pool(4)
 	db = RedisClient()
 	i = 1
@@ -43,10 +35,15 @@ if __name__ == '__main__':
 			w = Work(book)
 			print('-'*100)
 			print(book[1])
-			p.apply_async(func=w.gogogo)
+			p.apply_async(func=w.gogogo,callback=w.log)
 		except:
 			break
 	p.close()
 	print('%s个进程创建完毕\n'%i)
 	p.join()
 	print('%s 结束'%(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())))
+
+
+if __name__ == '__main__':
+	bqg = BiQuGe ()  # 获取book列表
+	startwork()

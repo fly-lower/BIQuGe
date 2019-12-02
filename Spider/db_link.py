@@ -1,6 +1,6 @@
 import redis
 import pymongo
-from settings import *
+from Spider.settings import *
 class MongoClient:
 	def __init__(self,dbname,tablename):
 		self.client = pymongo.MongoClient(host=MONGO_HOST,port=MONGO_PORT)
@@ -40,4 +40,4 @@ class RedisClient:
 if __name__ == '__main__':
 	pass
 	mg = MongoClient()
-	mg.save('newdb','newtable','zhangsan','nibababba')
+	mg.save('newdb','newtable','zhangsan','n')

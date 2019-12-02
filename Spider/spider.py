@@ -1,13 +1,11 @@
 import re
-
 import requests
-import threading
 from threading import Thread
 
 from lxml import etree
-from db_link import RedisClient as RD
-from db_link import MongoClient as MG
-from settings import *
+from Spider.db_link import RedisClient as RD
+from Spider.db_link import MongoClient as MG
+from Spider.settings import *
 from tools import *
 
 class NetError(Exception):
@@ -41,18 +39,30 @@ class BiQuGe(Thread):
 
 
 	def chapters(self,title_url):
+		'''
+		给定书名，获取所有章节名和url，
+		检查任务队列中是否存在该书，若有就直接跳过，没有则爬取内容存入任务队列
+		:param title_url:
+		:return:
+		'''
 		print('书名：',self.job[1],'\n')
-		response = requests.get(title_url,headers = self.headers)
-		response.encoding='utf-8'
-		html = etree.HTML(response.text)
-		chapter_urls = html.xpath('//div[@id="list"]/dl/dd/a/@href')
-		chapter_urls = ['http://www.xbiquge.la'+i for i in chapter_urls]
-		hash_urls = [MD5(i) for i in chapter_urls]
-		chapter_titles = html.xpath('//div[@id="list"]/dl/dd/a/text()')
-		chapters = zip(chapter_titles,chapter_urls,hash_urls)
-		for i in enumerate(chapters):
-			if len(i)==2:
-				self.db.put_task(self.job[1],i)
+		try:
+			item = self.db.get_task ( self.job [1] )
+			self.db.put_task ( self.job [1], item )
+		except:
+			response = requests.get(title_url,headers = self.headers)
+			response.encoding='utf-8'
+			html = etree.HTML(response.text)
+			chapter_urls = html.xpath('//div[@id="list"]/dl/dd/a/@href')
+			chapter_urls = ['http://www.xbiquge.la'+i for i in chapter_urls]
+			hash_urls = [MD5(i) for i in chapter_urls]
+			chapter_titles = html.xpath('//div[@id="list"]/dl/dd/a/text()')
+			chapters = zip(chapter_titles,chapter_urls,hash_urls)
+			for i in enumerate(chapters):
+				if len(i)==2:
+					self.db.put_task ( self.job [1], i )
+
+
 
 
 	def content(self,chapter_job):
@@ -73,7 +83,7 @@ class BiQuGe(Thread):
 			print ('%s：%s保存成功'%(self.job[1],title) )
 		except NetError:
 			print(content)
-			print('获取%s内容失败，存入任务列表\n'%title)
+			print('获取%s无效内容，存入任务列表\n'%title)
 			self.db.put_task(self.job[1],chapter_job)
 		except Exception:
 			print ( '获取%s内容失败，存入任务列表\n' % title )
@@ -83,15 +93,19 @@ class BiQuGe(Thread):
 		# 放入失败的章节
 
 	def books(self,main_url):
-		response = requests.get(main_url,headers = self.headers)
-		res = etree.HTML(response.text)
-		books_url = res.xpath('//div[@id="main"]/div/ul/li/a/@href')
-		books_title = res.xpath('//div[@id="main"]/div/ul/li/a/text()')
-		# print(books_title)
-		books = zip(books_url,books_title)
-		for i in books:
-			if len(i)==2:
-				self.db.put_task('BOOK_LIST',i)
+		try:
+			item = self.db.get_task('BOOK_LIST')
+			self.db.put_task('BOOK_LIST',item)
+		except:
+			response = requests.get(main_url,headers = self.headers)
+			res = etree.HTML(response.text)
+			books_url = res.xpath('//div[@id="main"]/div/ul/li/a/@href')
+			books_title = res.xpath('//div[@id="main"]/div/ul/li/a/text()')
+			# print(books_title)
+			books = zip(books_url,books_title)
+			for i in books:
+				if len(i)==2:
+					self.db.put_task('BOOK_LIST',i)
 
 	def run(self):
 		while True:

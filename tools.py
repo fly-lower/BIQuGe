@@ -1,7 +1,6 @@
 import hashlib
 
 
-
 def MD5(text):
 	md5 = hashlib.md5()
 	md5.update(text.encode('utf-8'))
