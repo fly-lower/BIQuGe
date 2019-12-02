@@ -36,6 +36,7 @@ class BiQuGe(Thread):
 		if self.job:
 			# print('开工了')
 			self.chapters(self.job[0])
+			self.mg = MG(MONGO_DB,self.job[1])
 
 
 	def chapters(self,title_url):
@@ -50,17 +51,20 @@ class BiQuGe(Thread):
 			item = self.db.get_task ( self.job [1] )
 			self.db.put_task ( self.job [1], item )
 		except:
-			response = requests.get(title_url,headers = self.headers)
-			response.encoding='utf-8'
-			html = etree.HTML(response.text)
-			chapter_urls = html.xpath('//div[@id="list"]/dl/dd/a/@href')
-			chapter_urls = ['http://www.xbiquge.la'+i for i in chapter_urls]
-			hash_urls = [MD5(i) for i in chapter_urls]
-			chapter_titles = html.xpath('//div[@id="list"]/dl/dd/a/text()')
-			chapters = zip(chapter_titles,chapter_urls,hash_urls)
-			for i in enumerate(chapters):
-				if len(i)==2:
-					self.db.put_task ( self.job [1], i )
+			try:
+				self.mg.table.find()
+			except:
+				response = requests.get(title_url,headers = self.headers)
+				response.encoding='utf-8'
+				html = etree.HTML(response.text)
+				chapter_urls = html.xpath('//div[@id="list"]/dl/dd/a/@href')
+				chapter_urls = ['http://www.xbiquge.la'+i for i in chapter_urls]
+				hash_urls = [MD5(i) for i in chapter_urls]
+				chapter_titles = html.xpath('//div[@id="list"]/dl/dd/a/text()')
+				chapters = zip(chapter_titles,chapter_urls,hash_urls)
+				for i in enumerate(chapters):
+					if len(i)==2:
+						self.db.put_task ( self.job [1], i )
 
 
 
@@ -78,8 +82,8 @@ class BiQuGe(Thread):
 				raise NetError
 				# else:
 				# 	raise ContentError
-			mg = MG(MONGO_DB,self.job[1])
-			mg.table.update({'hash_url':hash_url},{'$set':{'title':title,'index':index,'content':content}},upsert=True)
+
+			self.mg.table.update({'hash_url':hash_url},{'$set':{'title':title,'index':index,'content':content}},upsert=True)
 			print ('%s：%s保存成功'%(self.job[1],title) )
 		except NetError:
 			print(content)
@@ -93,10 +97,11 @@ class BiQuGe(Thread):
 		# 放入失败的章节
 
 	def books(self,main_url):
+		# try:
+		# 	item = self.db.get_task('BOOK_LIST')
+		# 	self.db.put_task('BOOK_LIST',item)
+		# except:
 		try:
-			item = self.db.get_task('BOOK_LIST')
-			self.db.put_task('BOOK_LIST',item)
-		except:
 			response = requests.get(main_url,headers = self.headers)
 			res = etree.HTML(response.text)
 			books_url = res.xpath('//div[@id="main"]/div/ul/li/a/@href')
@@ -106,6 +111,8 @@ class BiQuGe(Thread):
 			for i in books:
 				if len(i)==2:
 					self.db.put_task('BOOK_LIST',i)
+		except:
+			print('获取章节出现异常')
 
 	def run(self):
 		while True:
