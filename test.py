@@ -1,10 +1,9 @@
 # i = [1,2,3,4,5]
 # print(enumerate(i))
+import multiprocessing
+import threading
 import time
 
-import redis
-import threading
-import multiprocessing
 
 # rd = redis.Redis()
 #

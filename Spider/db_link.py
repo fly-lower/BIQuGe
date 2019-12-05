@@ -1,6 +1,10 @@
-import redis
 import pymongo
-from Spider.settings import *
+import pymysql
+import redis
+
+from .settings import *
+
+
 class MongoClient:
 	def __init__(self,dbname,tablename):
 		self.client = pymongo.MongoClient(host=MONGO_HOST,port=MONGO_PORT)
@@ -36,6 +40,9 @@ class RedisClient:
 		# print(task)
 		return task
 
+class MysqlClient:
+	def __init__(self):
+		self.mysql = pymysql.Connect()
 
 if __name__ == '__main__':
 	pass

@@ -1,8 +1,9 @@
+import multiprocessing
 import time
 
-import multiprocessing
-from Spider.db_link import RedisClient
-from Spider.spider import BiQuGe
+from BIQuGe.Spider.db_link import RedisClient
+from BIQuGe.Spider.spider import BiQuGe
+
 
 class Work:
 	def __init__(self,book):

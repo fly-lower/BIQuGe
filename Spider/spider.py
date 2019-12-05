@@ -1,12 +1,15 @@
 import re
-import requests
 from threading import Thread
 
+import requests
+from BIQuGe.Spider.db_link import MongoClient as MG
+from BIQuGe.Spider.db_link import RedisClient as RD
+from BIQuGe.Spider.settings import *
 from lxml import etree
-from Spider.db_link import RedisClient as RD
-from Spider.db_link import MongoClient as MG
-from Spider.settings import *
-from tools import *
+
+
+# from tools import *
+
 
 class NetError(Exception):
 	pass
