@@ -11,7 +11,7 @@ class Work:
 		self.book=book
 	def gogogo(self):
 		print('开启进程%s\n'%str(self.book[1]))
-		spider_list = [BiQuGe(job=self.book) for i in range(5)]
+		spider_list = [BiQuGe(job=self.book) for i in range(30)]
 		print('开启了线程\n')
 		for spider in spider_list:
 			spider.start()
@@ -47,4 +47,5 @@ def startwork():
 
 if __name__ == '__main__':
 	bqg = BiQuGe ()  # 获取book列表
-	startwork()
+	while True:
+		startwork()
